@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#050a14">
+<title>Missão Césio-137: O Local Abandonado</title>
+<style>
+:root{--bg:#e9edf5;--fg:#0b1730;--panel:#fff;--line:#c4cee3;--acc:#0e6bd6;--ok:#0f7a42;--warn:#b45309;--chip:#f2f5fb;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#050a14;--fg:#e4ecfa;--panel:#0e182b;--line:#24365a;--acc:#52a8ff;--ok:#41e08a;--warn:#ffb020;--chip:#0a1324}}
+:root[data-theme="dark"]{--bg:#050a14;--fg:#e4ecfa;--panel:#0e182b;--line:#24365a;--acc:#52a8ff;--ok:#41e08a;--warn:#ffb020;--chip:#0a1324}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+@supports (height:100dvh){html,body{height:100dvh}}
+body{background:var(--bg);color:var(--fg);font-family:"Trebuchet MS",system-ui,-apple-system,"Segoe UI",sans-serif;overflow:hidden;overscroll-behavior:none;-webkit-tap-highlight-color:transparent;-webkit-text-size-adjust:100%}
+#app{position:relative;height:100%;max-width:1100px;margin:0 auto;padding:8px max(10px,env(safe-area-inset-right)) 8px max(10px,env(safe-area-inset-left));display:flex;flex-direction:column;gap:6px}
+h1{font:700 clamp(15px,2.2vw,21px)/1.2 "Courier New",ui-monospace,monospace;margin:2px 0;letter-spacing:.02em}
+#hud{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:clamp(14px,2vw,17px)}
+.chip{background:var(--chip);border:1px solid var(--line);border-radius:8px;padding:5px 9px;transition:.25s}
+.chip.done{border-color:var(--ok);color:var(--ok);font-weight:700}
+#meter{display:flex;align-items:center;gap:6px;margin-left:auto}
+#bar{width:90px;height:9px;border-radius:5px;background:var(--chip);border:1px solid var(--line);overflow:hidden}
+#fill{height:100%;width:0;background:linear-gradient(90deg,#41e08a,#ffb020,#ff4d4d)}
+.sm{font:inherit;background:var(--chip);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:5px 9px;cursor:pointer;touch-action:manipulation}
+.sh{display:none}
+#goal{display:none;background:#1d8cff;color:#fff;border:5px solid #0b4f9c;border-radius:14px;padding:10px 16px;font-size:clamp(18px,3vw,28px);line-height:1.3;font-weight:800;text-align:center;box-shadow:0 4px 0 #0b4f9c}
+#goal.on{display:block}
+#main{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr);grid-template-areas:"s";place-items:center}
+#toast,#rush{line-height:1.35}
+#stage{grid-area:s;position:relative;border-radius:12px;overflow:hidden;border:1px solid var(--line);background:#050a14;touch-action:none;line-height:0}
+canvas{display:block}
+.ctl{display:none;align-items:center;justify-content:center;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;height:100%;width:100%}
+#ctlL{grid-area:l}#ctlR{grid-area:r}
+#joy{position:relative;width:120px;height:120px;border-radius:50%;background:rgba(80,160,255,.14);border:2px solid rgba(124,196,255,.55);touch-action:none}
+#knob{position:absolute;left:50%;top:50%;width:52px;height:52px;margin:-26px 0 0 -26px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#7cc4ff,#1d8cff);box-shadow:0 3px 10px rgba(0,0,0,.4);pointer-events:none}
+#bAct{width:96px;height:96px;border-radius:50%;border:0;background:#1d8cff;color:#fff;font:700 34px "Courier New",monospace;box-shadow:0 5px 0 #0b4f9c;touch-action:manipulation;cursor:pointer}
+#bAct:active{transform:translateY(3px);box-shadow:0 2px 0 #0b4f9c}
+#bAct.hot{animation:hot 1s infinite}
+@keyframes hot{50%{box-shadow:0 5px 0 #0b4f9c,0 0 0 10px rgba(255,210,63,.45)}}
+#help{font-size:15px;margin:0;opacity:1}
+.tc,.rot,.tcl{display:none}
+body.touch #ttl,body.touch .kb,body.touch .kbl,body.touch .lg{display:none}
+body.touch .tc,body.touch .tcl{display:inline}body.touch .tcl{display:block}
+body.touch .sh{display:inline}
+body.touch #hud{gap:4px;font-size:12.5px}
+body.touch .chip{padding:3px 7px;border-radius:7px}
+body.touch .sm{padding:4px 9px;font-size:15px}
+body.touch #bar{width:54px}
+body.touch #goal{font-size:clamp(14.5px,4.2vw,19px);padding:7px 10px;border-width:3px;border-radius:12px}
+body.touch #help{font-size:13px}
+body.touch .ctl{display:flex}
+body.touch #main{grid-template-columns:1fr 1fr;grid-template-rows:minmax(0,1fr) 176px;grid-template-areas:"s s" "l r"}
+@media (orientation:portrait){body.touch .rot{display:inline}}
+@media (orientation:landscape){body.touch #main{grid-template-columns:128px minmax(0,1fr) 128px;grid-template-rows:minmax(0,1fr);grid-template-areas:"l s r"}body.touch #help{display:none}}
+body.touch #toast{font-size:14px;padding:6px 10px}
+@media (orientation:portrait) and (max-height:699px){body.touch #help{display:none}body.touch #main{grid-template-rows:minmax(0,1fr) 140px}#joy{width:104px;height:104px}#knob{width:46px;height:46px;margin:-23px 0 0 -23px}#bAct{width:84px;height:84px;font-size:30px}}
+.ov{position:absolute;inset:0;z-index:20;display:none;padding:14px;background:rgba(3,8,18,.96);overflow:auto;-webkit-overflow-scrolling:touch;color:#e4ecfa}
+.ov.on{display:flex}
+.card{margin:auto;max-width:560px;width:100%;text-align:left}
+.card h2{font:700 clamp(18px,4vw,28px)/1.15 "Courier New",ui-monospace,monospace;margin:0 0 8px;color:#7cc4ff}
+.card p,.card li{font-size:clamp(14px,2.6vw,17px);line-height:1.5;margin:6px 0}
+.card ul{padding-left:18px;margin:6px 0}
+kbd{background:#1b2b4a;border:1px solid #3a5388;border-radius:5px;padding:1px 6px;font-size:.9em}
+.btn{font:700 clamp(14px,2.6vw,17px) "Courier New",ui-monospace,monospace;background:#1d8cff;color:#fff;border:0;border-radius:10px;padding:12px 22px;cursor:pointer;margin-top:8px;box-shadow:0 4px 0 #0b4f9c;touch-action:manipulation}
+.btn:active{transform:translateY(3px);box-shadow:0 1px 0 #0b4f9c}
+.btn:focus-visible,.sm:focus-visible{outline:3px solid #ffd23f;outline-offset:2px}
+.note{font-size:12px;opacity:.8}
+@media (max-height:430px){.card h2{font-size:18px;margin-bottom:4px}.card p,.card li{font-size:13px;margin:3px 0}.btn{padding:9px 18px;margin-top:4px}}
+@keyframes up{from{transform:translateY(12px);opacity:0}to{transform:none;opacity:1}}
+#dlg{position:absolute;left:10px;right:10px;bottom:calc(10px + env(safe-area-inset-bottom,0px));z-index:15;background:rgba(7,14,30,.93);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);color:#eef4ff;border:1px solid #34508a;border-radius:16px;padding:14px 16px;display:none;gap:14px;align-items:center;box-shadow:0 10px 30px rgba(0,0,0,.5)}
+#dlg.on{display:flex;animation:up .28s ease-out}
+#dIco{flex:none;width:clamp(52px,11vw,72px);aspect-ratio:1;border-radius:16px;display:grid;place-items:center;color:#7cc4ff;background:radial-gradient(circle at 30% 20%,#1d3a6b,#0b1630);border:1px solid #34508a;box-shadow:0 0 22px rgba(80,170,255,.22)}
+#dIco svg{width:56%;height:56%}
+.dtx{min-width:0;flex:1}
+#dK{font-size:clamp(11px,1.9vw,13px);letter-spacing:.14em;text-transform:uppercase;color:#7cc4ff;font-weight:700}
+#dP{margin:5px 0 3px;font-size:clamp(16px,2.9vw,21px);line-height:1.45}
+#dP .k{color:#ffd23f;font-weight:700}
+#dG{margin:0 0 8px;font-size:11px;color:#8fb3e6;opacity:.85}
+#dlg .btn{margin-top:2px;padding:8px 16px;font-size:clamp(13px,2.3vw,15px)}
+.cards{display:inline-flex;gap:4px;margin-left:8px;vertical-align:middle}
+.mc{width:22px;height:28px;border-radius:6px;border:1.5px dashed var(--line);background:transparent;padding:0;display:inline-grid;place-items:center;color:var(--acc)}
+.mc.on{border:1.5px solid var(--acc);background:var(--panel);cursor:pointer}
+.mc svg{width:14px;height:14px}
+.mc.pop{animation:pop .55s cubic-bezier(.2,1.6,.4,1)}
+@keyframes pop{from{transform:scale(.4);opacity:0}to{transform:scale(1);opacity:1}}
+#toast{position:absolute;left:50%;top:10px;transform:translateX(-50%);max-width:92%;background:rgba(8,16,32,.94);color:#fff;border:1px solid #3a5388;border-radius:10px;padding:8px 12px;font-size:clamp(14px,2.8vw,19px);text-align:center;opacity:0;pointer-events:none;transition:opacity .25s}
+#toast.on{opacity:1}
+#rush{position:absolute;left:10px;bottom:10px;background:#7a1d1d;color:#fff;border-radius:8px;padding:5px 10px;font-size:12px;display:none}
+#rush.on{display:block;animation:bl 1s infinite}
+@keyframes bl{50%{opacity:.55}}
+@media (max-height:430px){#dlg{padding:8px 12px;gap:10px}#dIco{width:46px}#dP{font-size:14.5px;margin:2px 0}#dG{margin:0 0 4px}#dlg .btn{padding:6px 14px;margin:0}}
+@media (prefers-reduced-motion:reduce){#dlg.on,#rush.on,.mc.pop,#bAct.hot{animation:none}}
+</style>
+</head>
+<body>
+<noscript><div style="position:fixed;inset:0;z-index:99;background:#030f1f;color:#fff;font:700 20px/1.4 system-ui,sans-serif;padding:28px;text-align:center"><p style="font-size:28px">☢ MISSÃO CÉSIO-137</p><p>Este jogo precisa de JavaScript e não funciona na pré-visualização do WhatsApp ou do app Arquivos.</p><p>Abra o link no <b>Chrome</b> ou no <b>Safari</b>.</p></div></noscript>
+<div id="app">
+<h1 id="ttl">☢ MISSÃO CÉSIO-137: O LOCAL ABANDONADO</h1>
+<div id="hud">
+  <span class="chip" id="oC"><span id="oCt">Pistas encontradas: 0/3</span><span class="cards" id="cards"></span></span>
+  <span class="chip" id="oI">Área isolada: não</span>
+  <span class="chip" id="oR">Autoridades avisadas: não</span>
+  <span id="meter">Exposição <span id="bar"><div id="fill"></div></span></span>
+  <button class="sm" id="bPause" aria-label="Pausar"><span class="lg">⏸ Pausar</span><span class="sh">⏸</span></button>
+  <button class="sm" id="bReset" aria-label="Reiniciar"><span class="lg">↻ Reiniciar</span><span class="sh">↻</span></button>
+</div>
+<div id="goal" aria-live="polite"></div>
+<div id="main">
+  <div id="stage"><canvas id="cv"></canvas><div id="toast"></div><div id="rush">⚠ Visitantes se aproximam da área suspeita!</div></div>
+  <div class="ctl" id="ctlL"><div id="joy"><div id="knob"></div></div></div>
+  <div class="ctl" id="ctlR"><button id="bAct" aria-label="Interagir">E</button></div>
+</div>
+<p id="help"><span class="kb"><kbd>WASD</kbd>/setas: andar · <kbd>E</kbd>: interagir · <kbd>Esc</kbd>: pausar · </span><span class="tc">Arraste o joystick para andar e toque em E para interagir. </span>Procure objetos com anel pulsante. A setinha branca ao lado do personagem mostra o caminho. <span class="rot">Dica: gire o celular para ver o mapa maior.</span></p>
+
+<div id="dlg" role="dialog" aria-live="polite"><div id="dIco" aria-hidden="true"></div><div class="dtx"><div id="dK"></div><p id="dP"></p><p id="dG"></p><button class="btn" id="bDlg">CONTINUAR (E)</button></div></div>
+
+<div class="ov on" id="ovStart"><div class="card">
+  <h2>MISSÃO CÉSIO-137:<br>O LOCAL ABANDONADO</h2>
+  <p>Um prédio desativado disparou um alerta de segurança. Encontre <b>3 pistas</b>, <b>isole</b> a área perigosa e <b>avise as autoridades</b>.</p>
+  <p><b>Regra de ouro:</b> não toque e não se aproxime de nada suspeito.</p>
+  <ul class="kbl"><li><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> ou setas: andar</li><li><kbd>E</kbd>: interagir com objetos brilhantes</li><li><kbd>Esc</kbd>: pausar</li></ul>
+  <p class="tcl"><b>Joystick</b> (esquerda): andar · botão <b>E</b> (direita): interagir</p>
+  <button class="btn" id="bStart">INICIAR MISSÃO</button>
+  <p class="note">Jogo educativo e fictício, inspirado no acidente de Goiânia (1987). Não é um guia de emergência real.</p>
+</div></div>
+<div class="ov" id="ovPause"><div class="card"><h2>PAUSADO</h2><p>Respire. A missão continua de onde parou.</p><button class="btn" id="bResume">CONTINUAR</button></div></div>
+<div class="ov" id="ovWin"><div class="card">
+  <h2>MISSÃO CUMPRIDA!</h2>
+  <p id="wT"></p>
+  <p><b>O que você aprendeu:</b></p>
+  <ul>
+    <li>Em 1987, em Goiânia, um aparelho abandonado foi aberto sem que ninguém soubesse do perigo.</li>
+    <li>O símbolo de três pás significa radiação. Brilho bonito não é segurança!</li>
+    <li>Conduta segura: não tocar, afastar-se, sinalizar à distância e avisar as autoridades.</li>
+    <li>O césio-137 leva cerca de 30 anos para perder metade da radioatividade. Por isso o controle é essencial.</li>
+  </ul>
+  <button class="btn" id="bAgain">JOGAR NOVAMENTE</button>
+</div></div>
+<div class="ov" id="ovFail"><div class="card"><h2>MISSÃO INTERROMPIDA</h2><p id="fT"></p><p>Na vida real: afaste-se e avise as autoridades.</p><button class="btn" id="bRetry">TENTAR DE NOVO</button></div></div>
+</div>
+
+<script>
+(()=>{
+const T=32,C=20,R=13,W=C*T,H=R*T,RZ=64,ZX=16.5*T,ZY=10.5*T;
+const $=id=>document.getElementById(id),cv=$('cv'),ctx=cv.getContext('2d');
+const Q=Math.min(window.devicePixelRatio||1,matchMedia('(pointer:coarse)').matches?1.5:2);let VZ=1,CW=W,CH=H;
+
+// ---------- mapa ----------
+const g=Array.from({length:R},()=>Array(C).fill(1));
+const carve=(a,b,c,d)=>{for(let r=b;r<=d;r++)for(let q=a;q<=c;q++)g[r][q]=0};
+carve(1,1,6,4);carve(8,1,12,4);carve(14,1,18,4);carve(1,6,18,7);carve(1,9,6,11);carve(8,9,18,11);
+const doors=[[3,5],[10,5],[16,5],[3,8],[12,8]];doors.forEach(([c,r])=>g[r][c]=0);
+const furn=[[1,1,2,1,'shelf'],[4,1,2,1,'desk'],[8,1,2,2,'crate'],[12,3,1,2,'crate'],[14,1,2,1,'shelf'],[14,3,2,1,'sofa'],[17,3,2,1,'desk'],[9,6,1,1,'cart'],[5,9,2,1,'desk'],[1,11,1,1,'crate'],[9,9,2,1,'machine'],[9,11,1,1,'kit'],[13,11,1,1,'barrel'],[18,1,1,1,'barrel']]
+ .map(([c,r,w,h,k])=>({x:c*T,y:r*T,w:w*T,h:h*T,k}));
+const solidAt=(x,y)=>{const c=Math.floor(x/T),r=Math.floor(y/T);return c<0||r<0||c>=C||r>=R||g[r][c]===1};
+const hit=(x,y,h=8)=>{if(solidAt(x-h,y-h)||solidAt(x+h,y-h)||solidAt(x-h,y+h)||solidAt(x+h,y+h))return true;
+ for(const f of furn)if(x+h>f.x&&x-h<f.x+f.w&&y+h>f.y&&y-h<f.y+f.h)return true;return false};
+
+// ---------- pistas ----------
+const spots=[
+ {id:'c1',x:5*T,y:1.55*T,t:'Ficha de inventário',g:'Material didático fictício',
+  p:`Hmm… uma ficha: “fonte radioativa, *paradeiro desconhecido*”. Em Goiânia, em 1987, um aparelho *abandonado* foi aberto por quem não sabia do perigo.`},
+ {id:'c2',x:10.5*T,y:.95*T,t:'Placa de aviso',g:'Material didático fictício',
+  p:`Esse símbolo de três pás significa *radiação*. Em Goiânia, o pó azul brilhante atraiu curiosos. *Brilho bonito não é sinal de segurança!*`},
+ {id:'c3',x:16.5*T,y:.95*T,t:'Mural de procedimentos',g:'Material didático fictício',
+  p:`Um mural! 1) *Não toque.* 2) *Afaste-se* e afaste os outros. 3) *Sinalize* à distância. 4) *Avise* Defesa Civil, Bombeiros ou CNEN.`},
+ {id:'kit',x:9.5*T,y:11.5*T},{id:'radio',x:5.5*T,y:9.55*T}];
+
+// ---------- estado ----------
+const bfs=(tx,ty)=>{const d=Array.from({length:R},()=>Array(C).fill(-1));const q=[[tx,ty]];d[ty][tx]=0;for(let i=0;i<q.length;i++){const[x,y]=q[i];for(const[a,b]of[[1,0],[-1,0],[0,1],[0,-1]]){const nx=x+a,ny=y+b;if(nx>=0&&ny>=0&&nx<C&&ny<R&&g[ny][nx]===0&&d[ny][nx]<0){d[ny][nx]=d[y][x]+1;q.push([nx,ny])}}}return d};
+spots.forEach(s=>{s.df=bfs(Math.floor(s.x/T),Math.floor(s.y/T))});
+function guide(){
+ if(S.mode!=='play'||S.called)return null;
+ const px=S.p.x,py=S.p.y-3,pc=Math.floor(S.p.x/T),pr=Math.floor(S.p.y/T);
+ let t=null,bd=1e9;
+ for(const s of spots){if(!active(s))continue;const v=s.df[pr][pc];if(v>=0&&v<bd){bd=v;t=s}}
+ if(!t)return null;
+ if(Math.hypot(t.x-px,t.y-py)<50)return null;
+ const los=(x,y)=>{const n=Math.ceil(Math.hypot(x-px,y-py)/4);for(let i=1;i<=n;i++)if(solidAt(px+(x-px)*i/n,py+(y-py)*i/n))return false;return true};
+ if(los(t.x,Math.max(t.y,T+2)))return Math.atan2(t.y-py,t.x-px);
+ let c=pc,r=pr,best=null;const df=t.df;
+ for(let k=0;k<80&&df[r][c]>0;k++){let nb=null,bv=df[r][c];for(const[a,b]of[[1,0],[-1,0],[0,1],[0,-1]]){const nx=c+a,ny=r+b;if(nx>=0&&ny>=0&&nx<C&&ny<R&&df[ny][nx]>=0&&df[ny][nx]<bv){bv=df[ny][nx];nb=[nx,ny]}}
+  if(!nb)break;c=nb[0];r=nb[1];const wx=(c+.5)*T,wy=(r+.5)*T;if(los(wx,wy))best=[wx,wy]}
+ if(!best)best=[(c+.5)*T,(r+.5)*T];
+ return Math.atan2(best[1]-py,best[0]-px);
+}
+const keys={},vk={};let S;
+const ICON={
+ c1:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4"/><path d="M9 12h6M9 15.5h6M9 18.5h4"/></svg>',
+ c2:(()=>{let d='';for(let i=0;i<3;i++){const a=i*2.0944-1.5708,f=t=>[(12+9.5*Math.cos(t)).toFixed(2),(12+9.5*Math.sin(t)).toFixed(2)],p=f(a-.52),q=f(a+.52);d+=`M12 12L${p[0]} ${p[1]}A9.5 9.5 0 0 1 ${q[0]} ${q[1]}Z`}return `<svg viewBox="0 0 24 24" fill="currentColor"><path d="${d}"/><circle cx="12" cy="12" r="1.7"/></svg>`})(),
+ c3:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 3h6v3H9z"/><path d="M8.5 11.5l1.5 1.5 2.5-3M8.5 17h7"/></svg>'};
+let tyT=null,tyN=0,tyEl=[];
+const tyBusy=()=>tyN<tyEl.length;
+function finishType(){clearInterval(tyT);tyEl.forEach(e=>{e.style.visibility='visible'});tyN=tyEl.length}
+function typeIn(txt){clearInterval(tyT);const p=$('dP');p.textContent='';tyEl=[];let k=false;
+ for(const ch of txt){if(ch==='*'){k=!k;continue}const e=document.createElement('span');e.textContent=ch;if(k)e.className='k';e.style.visibility='hidden';p.appendChild(e);tyEl.push(e)}
+ tyN=0;
+ if(matchMedia('(prefers-reduced-motion: reduce)').matches){finishType();return}
+ tyT=setInterval(()=>{for(let i=0;i<2&&tyN<tyEl.length;i++)tyEl[tyN++].style.visibility='visible';if(tyN>=tyEl.length)clearInterval(tyT)},18)}
+function openClue(s,review){S.mode='dlg';const i=spots.indexOf(s);
+ $('dIco').innerHTML=ICON[s.id];$('dK').textContent=`Pista ${i+1} de 3 \u00b7 ${s.t}`;$('dG').textContent=s.g;typeIn(s.p);show('dlg')}
+function dlgAct(){if(tyBusy())finishType();else closeDlg()}
+function cards(){const el=$('cards');el.innerHTML='';
+ spots.slice(0,3).forEach((s,i)=>{const b=document.createElement('button');b.type='button';b.className='mc'+(s.done?' on':'')+(S.popI===i?' pop':'');b.disabled=!s.done;
+  b.setAttribute('aria-label',s.done?`Rever pista ${i+1}: ${s.t}`:`Pista ${i+1} ainda n\u00e3o encontrada`);
+  if(s.done){b.innerHTML=ICON[s.id];b.onclick=()=>{if(S.mode==='play')openClue(s,true)}}el.appendChild(b)});S.popI=-1}
+const mk=(x,y,col,loop)=>({x:x*T,y:y*T,col,loop:loop.map(a=>[a[0]*T,a[1]*T]),route:loop.map(a=>[a[0]*T,a[1]*T]),i:0,lp:true,mode:'wander',wait:0,bub:0,dx:0,dy:1,mv:false,delay:0});
+function init(){
+ spots.forEach(s=>{delete s.done;delete s.seen});clearInterval(tyT);tyEl=[];tyN=0;
+ S={mode:'menu',t:0,time:0,p:{x:3.5*T,y:10.5*T,dx:0,dy:-1,mv:false},found:{},n:0,iso:false,called:false,expo:0,near:false,
+  npcs:[mk(2,7,'#e8a23c',[[2,7],[7,7],[4,7],[9,7]]),mk(17,7,'#c77dff',[[17,7],[14,7],[16,7],[11,7]])],
+  parts:[],rings:[],cam:{x:0,y:0,first:1},toastT:0,tape:0,shake:0,flash:0};
+ ['ovStart','ovPause','ovWin','ovFail'].forEach(i=>$(i).classList.remove('on'));$('dlg').classList.remove('on');$('rush').classList.remove('on');$('toast').classList.remove('on');show('ovStart');show('goal',false);
+ hud();
+}
+function goalTxt(){$('goal').textContent=S.called?'Missão concluída! Parabéns!':S.iso?'PASSO 3 de 3: Volte à sala de entrada (embaixo, à esquerda) e aperte E perto do rádio.':S.n===3?'PASSO 2 de 3: Vá ao laboratório (embaixo, à direita) e aperte E perto da caixa laranja (kit). Cuidado com o brilho azul!':`PASSO 1 de 3: Encontre as 3 pistas (${S.n}/3). Aperte E perto dos objetos com anel amarelo.`}
+function hud(){
+ goalTxt();fit();
+ $('oCt').textContent=(document.body.classList.contains('touch')?`Pistas ${S.n}/3`:`Pistas encontradas: ${S.n}/3`);cards();$('oC').classList.toggle('done',S.n===3);
+ $('oI').textContent=(document.body.classList.contains('touch')?`Isolada: ${S.iso?'sim':'não'}`:`Área isolada: ${S.iso?'sim':'não'}`);$('oI').classList.toggle('done',S.iso);
+ $('oR').textContent=(document.body.classList.contains('touch')?`Avisadas: ${S.called?'sim':'não'}`:`Autoridades avisadas: ${S.called?'sim':'não'}`);$('oR').classList.toggle('done',S.called);
+}
+function toast(m,s=3.4){const e=$('toast');e.textContent=m;e.classList.add('on');S.toastT=s}
+function burst(x,y,col='#ffd23f'){S.rings.push({x,y,r:4,l:1,col});for(let i=0;i<16;i++){const a=Math.random()*6.283,v=30+Math.random()*60;S.parts.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,l:1,col})}}
+const show=(id,on=true)=>$(id).classList.toggle('on',on);
+function start(){S.mode='play';show('ovStart',false);show('goal');fit();toast('Procure objetos com anel pulsante e aperte E perto deles.',4.5)}
+function pause(){if(S.mode==='play'){S.mode='pause';show('ovPause')}else if(S.mode==='pause'){S.mode='play';show('ovPause',false)}}
+function fail(m){S.mode='fail';$('fT').textContent=m;show('ovFail');show('rush',false)}
+function win(){S.mode='win';$('wT').textContent=`Missão cumprida em ${Math.round(S.time)} segundos!`;show('ovWin');show('rush',false)}
+
+// ---------- interação ----------
+const active=s=>s.id[0]==='c'?!s.done:s.id==='kit'?(S.n===3&&!S.iso):((S.n<3&&!s.seen)||(S.iso&&!S.called));
+function nearest(){let b=null,bd=42;for(const s of spots){if(s.done&&s.id[0]==='c')continue;const d=Math.hypot(S.p.x-s.x,S.p.y-s.y);if(d<bd){bd=d;b=s}}return b}
+function interact(){
+ if(S.mode==='dlg'){dlgAct();return}
+ if(S.mode!=='play')return;
+ const s=nearest();if(!s)return;
+ if(s.id[0]==='c'){s.done=true;S.found[s.id]=1;S.n++;S.popI=spots.indexOf(s);burst(s.x,s.y);hud();openClue(s);return}
+ if(s.id==='kit'){
+  if(S.n<3)toast('Ainda não sei o que isolar. Vou achar as 3 pistas primeiro.');
+  else if(!S.iso){S.iso=true;S.tape=.01;burst(ZX,ZY,'#ffb020');hud();show('rush',false);toast('Área sinalizada! Agora volto ao rádio, na entrada.',6)}
+  else toast('A área já está sinalizada.');return}
+ if(s.id==='radio'){
+  if(!S.iso){s.seen=true;toast(S.n<3?'Ainda não tenho o que avisar. Vou explorar o prédio.':'Primeiro preciso sinalizar a área com o kit, no laboratório.')}
+  else if(!S.called){S.called=true;hud();burst(s.x,s.y,'#41e08a');toast('Autoridades avisadas! A equipe está a caminho.',2.5);{const run=S;setTimeout(()=>{if(S===run&&S.mode==='play')win()},1400)}}}
+}
+function closeDlg(){clearInterval(tyT);show('dlg',false);S.mode='play';
+ if(S.n===3&&!S.iso&&!S.rushed){S.rushed=true;S.npcs.forEach((n,i)=>{n.mode='curious';n.route=[[12.5*T,7*T],[12.5*T,10.5*T],[ZX,ZY]];n.i=0;n.lp=false;n.delay=(Math.hypot(n.x-S.p.x,n.y-S.p.y)>Math.hypot(S.npcs[1-i].x-S.p.x,S.npcs[1-i].y-S.p.y)||(Math.hypot(n.x-S.p.x,n.y-S.p.y)===Math.hypot(S.npcs[1-i].x-S.p.x,S.npcs[1-i].y-S.p.y)&&i===0))?1:2;n.wait=0});show('rush');toast('Vêm visitantes! Preciso usar o kit (caixa laranja) no laboratório.',6)}}
+
+// ---------- NPCs ----------
+const toWander=n=>{n.mode='wander';n.route=n.loop;n.i=0;n.lp=true};
+const leave=n=>{n.mode='leave';n.route=[[12.5*T,10.5*T],[12.5*T,7*T],[n.loop[0][0],7*T]];n.i=0;n.lp=false};
+function npcUpdate(n,dt){
+ if(n.delay>0){n.delay-=dt;n.mv=false;return}
+ if(n.wait>0){n.wait-=dt;n.mv=false;return}
+ if(n.mode==='stopped'){n.bub-=dt;n.mv=false;if(n.bub<=0)leave(n);return}
+ const pt=n.route[n.i],ex=pt[0]-n.x,ey=pt[1]-n.y,d=Math.hypot(ex,ey);
+ if(d<3){n.i++;if(n.i>=n.route.length){if(n.lp)n.i=0;else if(n.mode==='leave')toWander(n);else n.i=n.route.length-1}n.wait=n.mode==='wander'?.9:0;n.mv=false;return}
+ const sp=n.mode==='curious'?28:28;n.x+=ex/d*sp*dt;n.y+=ey/d*sp*dt;n.dx=ex/d;n.dy=ey/d;n.mv=true;
+ const dz=Math.hypot(n.x-ZX,n.y-ZY);
+ if(n.mode==='curious'&&S.iso&&dz<RZ+46){n.mode='stopped';n.bub=2.8;n.mv=false}
+ else if(n.mode==='curious'&&!S.iso&&dz<RZ-8)fail('Um visitante chegou perto da fonte antes do isolamento. Sinalize a área mais cedo!');
+}
+
+// ---------- atualização ----------
+function update(dt){
+ S.t+=dt;
+ {const vw=CW/VZ,vh=CH/VZ,tx=Math.max(0,Math.min(W-vw,S.p.x-vw/2)),ty=Math.max(0,Math.min(H-vh,S.p.y-vh/2));
+  if(S.cam.first){S.cam.x=tx;S.cam.y=ty;S.cam.first=0}else{const k=Math.min(1,dt*7);S.cam.x+=(tx-S.cam.x)*k;S.cam.y+=(ty-S.cam.y)*k}}
+ if(S.toastT>0){S.toastT-=dt;if(S.toastT<=0)$('toast').classList.remove('on')}
+ for(const r of S.rings){r.r+=70*dt;r.l-=1.4*dt}S.rings=S.rings.filter(r=>r.l>0);
+ for(const p of S.parts){p.x+=p.vx*dt;p.y+=p.vy*dt;p.l-=1.6*dt}S.parts=S.parts.filter(p=>p.l>0);
+ if(S.tape>0&&S.tape<1)S.tape=Math.min(1,S.tape+dt*1.5);
+ S.shake=Math.max(0,S.shake-dt*3);S.flash=Math.max(0,S.flash-dt*2);
+ if(S.mode!=='play')return;
+ S.time+=dt;
+ let ix=(keys.KeyD||keys.ArrowRight?1:0)-(keys.KeyA||keys.ArrowLeft?1:0);
+ let iy=(keys.KeyS||keys.ArrowDown?1:0)-(keys.KeyW||keys.ArrowUp?1:0);
+ if(!ix&&!iy){ix=joy.x;iy=joy.y}
+ const p=S.p,l=Math.hypot(ix,iy);p.mv=l>.01;
+ if(p.mv){const m=Math.min(1,l);ix/=l;iy/=l;p.dx=ix;p.dy=iy;const sp=118*dt*Math.max(.4,m);
+  if(!hit(p.x+ix*sp,p.y))p.x+=ix*sp;if(!hit(p.x,p.y+iy*sp))p.y+=iy*sp}
+ S.npcs.forEach(n=>npcUpdate(n,dt));
+ if(S.mode!=='play')return;
+ const d=Math.hypot(p.x-ZX,p.y-ZY);
+ if(d<RZ){S.expo+=(25+60*(1-d/RZ))*dt;S.shake=.5;S.flash=.5;if(!S.warned2){S.warned2=1;toast('Exposição! Afaste-se agora!',2.5)}}
+ else{S.expo=Math.max(0,S.expo-30*dt);S.warned2=0}
+ if(d<RZ+55&&!S.near){S.near=true;toast('Esse brilho azul… melhor me afastar!',3)}
+ if(d>RZ+110)S.near=false;
+ $('fill').style.width=Math.min(100,S.expo)+'%';
+ if(S.expo>=100)fail('Você ficou perto demais da fonte. Ao ver o símbolo de radiação, afaste-se!');
+}
+
+// ---------- desenho ----------
+function trefoil(x,y,r,col){ctx.fillStyle=col;for(let i=0;i<3;i++){const a=i*2.094-1.57;ctx.beginPath();ctx.moveTo(x,y);ctx.arc(x,y,r,a-.52,a+.52);ctx.closePath();ctx.fill()}
+ ctx.beginPath();ctx.arc(x,y,r*.2,0,6.283);ctx.fill()}
+function rr(x,y,w,h,r,fill){ctx.fillStyle=fill;ctx.beginPath();r=Math.min(r,w/2,h/2);ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();ctx.fill()}
+function drawFurn(f){const{x,y,w,h,k}=f;ctx.fillStyle='rgba(0,0,0,.35)';ctx.fillRect(x+2,y+4,w,h);
+ if(k==='shelf'){rr(x,y,w,h,2,'#5a4630');ctx.fillStyle='#7a6140';for(let i=4;i<w;i+=10)ctx.fillRect(x+i,y+3,6,h-8)}
+ else if(k==='desk'){rr(x,y,w,h,3,'#6c5a45');rr(x+4,y+4,12,9,2,'#223a55');ctx.fillStyle='rgba(120,200,255,.5)';ctx.fillRect(x+6,y+6,8,5)}
+ else if(k==='crate'){rr(x+1,y+1,w-2,h-2,2,'#7a5a35');ctx.strokeStyle='#4a3520';ctx.lineWidth=2;ctx.strokeRect(x+4,y+4,w-8,h-8);ctx.beginPath();ctx.moveTo(x+4,y+4);ctx.lineTo(x+w-4,y+h-4);ctx.stroke()}
+ else if(k==='sofa'){rr(x,y,w,h,6,'#3b5d7a');rr(x+3,y+3,w-6,h-14,4,'#4a7396')}
+ else if(k==='cart'){rr(x+3,y+4,w-6,h-8,3,'#4b5563');ctx.fillStyle='#9aa7b8';ctx.fillRect(x+6,y+8,w-12,4)}
+ else if(k==='machine'){rr(x,y,w,h,3,'#3c4a5c');ctx.fillStyle='#16202e';ctx.fillRect(x+4,y+5,w-8,8);ctx.fillStyle=Math.sin(S.t*3)>0?'#ff5252':'#5a2222';ctx.fillRect(x+w-9,y+h-9,4,4)}
+ else if(k==='kit'){rr(x+2,y+3,w-4,h-6,3,'#d97706');ctx.fillStyle='#ffedd5';ctx.beginPath();ctx.moveTo(x+16,y+7);ctx.lineTo(x+22,y+24);ctx.lineTo(x+10,y+24);ctx.fill()}
+ else if(k==='barrel'){ctx.fillStyle='#7c2d12';ctx.beginPath();ctx.arc(x+16,y+16,12,0,6.283);ctx.fill();ctx.strokeStyle='#b45309';ctx.lineWidth=2;ctx.beginPath();ctx.arc(x+16,y+16,7,0,6.283);ctx.stroke()}}
+function person(x,y,col,dx,dy,mv,hat){const b=mv?Math.sin(S.t*14)*1.2:0;
+ ctx.fillStyle='rgba(0,0,0,.4)';ctx.beginPath();ctx.ellipse(x,y+9,8,3.5,0,0,6.283);ctx.fill();
+ rr(x-6,y-4+b,12,13,4,col);ctx.fillStyle='#f1c9a5';ctx.beginPath();ctx.arc(x,y-8+b,5.5,0,6.283);ctx.fill();
+ ctx.fillStyle=hat;ctx.beginPath();ctx.arc(x,y-9.5+b,5.8,3.14,6.283);ctx.fill();
+ ctx.fillStyle='#1b1b1b';ctx.fillRect(x+dx*2.5-2,y-8+dy*2+b,1.6,1.8);ctx.fillRect(x+dx*2.5+1,y-8+dy*2+b,1.6,1.8)}
+function draw(){
+ ctx.setTransform(Q*VZ,0,0,Q*VZ,-S.cam.x*Q*VZ,-S.cam.y*Q*VZ);
+ const sh=S.shake?(Math.random()-.5)*3*S.shake:0;ctx.translate(sh,sh);
+ ctx.fillStyle='#050a14';ctx.fillRect(-4,-4,W+8,H+8);
+ for(let r=0;r<R;r++)for(let c=0;c<C;c++){const x=c*T,y=r*T;
+  if(g[r][c]===0){const lab=c>=8&&r>=9;ctx.fillStyle=lab?((c+r)&1?'#18303a':'#1a3340'):((c+r)&1?'#1c2740':'#202c46');ctx.fillRect(x,y,T,T);
+   ctx.fillStyle='rgba(255,255,255,.04)';ctx.fillRect(x,y,T,1);ctx.fillRect(x,y,1,T)}
+  else{let adj=false;for(const[a,b]of[[0,1],[0,-1],[1,0],[-1,0]]){const rr2=r+b,cc=c+a;if(rr2>=0&&cc>=0&&rr2<R&&cc<C&&g[rr2][cc]===0)adj=true}
+   ctx.fillStyle=adj?'#1f2d4a':'#060a14';ctx.fillRect(x,y,T,T);if(adj){ctx.fillStyle='#3b4f78';ctx.fillRect(x,y,T,3);ctx.fillStyle='rgba(0,0,0,.35)';ctx.fillRect(x,y+T-4,T,4)}}}
+ for(const[c,r]of doors){const x=c*T,y=r*T;ctx.fillStyle='#6b4a2b';ctx.fillRect(x,y,4,T);ctx.fillRect(x+T-4,y,4,T);ctx.fillStyle='#8a6038';ctx.fillRect(x+4,y+3,3,T-6);ctx.fillStyle='rgba(255,210,63,.35)';ctx.fillRect(x+7,y+T/2-1,T-14,2)}
+ // zona suspeita
+ const pulse=.5+.5*Math.sin(S.t*2.2);
+ let gr=ctx.createRadialGradient(ZX,ZY,4,ZX,ZY,RZ+8);gr.addColorStop(0,`rgba(80,190,255,${.28+.1*pulse})`);gr.addColorStop(1,'rgba(80,190,255,0)');ctx.fillStyle=gr;ctx.fillRect(ZX-90,ZY-90,180,180);
+ ctx.save();ctx.beginPath();ctx.rect(8*T,9*T,11*T,3*T);ctx.clip();ctx.globalAlpha=.5;trefoil(ZX,ZY+2,26,'rgba(255,210,63,.35)');ctx.restore();
+ rr(ZX-7,ZY-14,14,24,4,'#6fb7e6');rr(ZX-7,ZY-14,14,5,3,'#cfe9fa');ctx.fillStyle=`rgba(140,220,255,${.5+.4*pulse})`;ctx.fillRect(ZX-4,ZY-6,8,12);
+ for(const f of furn)drawFurn(f);
+ // placas na parede e documento
+ const sg=(x,y,done)=>{rr(x-9,y-9,18,18,3,done?'#2e7d4f':'#ffd23f');trefoil(x,y,6.5,done?'#cdf5dc':'#1a1a1a')};
+ sg(spots[1].x,.55*T,spots[1].done);
+ rr(spots[2].x-11,.18*T,22,.62*T,2,spots[2].done?'#cdf5dc':'#f4f1e8');ctx.fillStyle='#8a8a8a';for(let i=0;i<3;i++)ctx.fillRect(spots[2].x-8,.3*T+i*5,16,2);
+ rr(spots[0].x-7,spots[0].y-6,14,11,1,spots[0].done?'#cdf5dc':'#f4f1e8');
+ // sinalização
+ if(S.tape>0){const k=Math.min(1,S.tape),rad=RZ*(.4+.6*k)+4;ctx.save();ctx.beginPath();ctx.rect(8*T,9*T,11*T,3*T);ctx.clip();
+  ctx.lineWidth=4;ctx.strokeStyle='#ffd23f';ctx.setLineDash([9,7]);ctx.beginPath();ctx.arc(ZX,ZY,rad,0,6.283);ctx.stroke();ctx.strokeStyle='#111';ctx.lineDashOffset=8;ctx.stroke();ctx.setLineDash([]);
+  for(let i=0;i<8;i++){const a=i*.785,cx=ZX+Math.cos(a)*rad,cy=ZY+Math.sin(a)*rad;ctx.fillStyle='#ff7a1a';ctx.beginPath();ctx.moveTo(cx,cy-8);ctx.lineTo(cx+6,cy+5);ctx.lineTo(cx-6,cy+5);ctx.fill();ctx.fillStyle='#fff';ctx.fillRect(cx-3,cy-1,6,2)}ctx.restore()}
+ // interativos
+ for(const s of spots){if(!active(s))continue;const cl=s.id[0]==='c'||(s.id==='radio'&&!S.iso),a=.45+.45*Math.sin(S.t*4+s.x);ctx.strokeStyle=`rgba(${cl?'255,210,63':'255,157,26'},${a})`;ctx.lineWidth=cl?2:3.5;ctx.beginPath();ctx.arc(s.x,s.y,(cl?13:17)+2*Math.sin(S.t*4),0,6.283);ctx.stroke()}
+ // pessoas
+ for(const n of S.npcs){person(n.x,n.y,n.col,n.dx,n.dy,n.mv,'#d7dbe2');
+  if(n.mode==='stopped'){rr(n.x-8,n.y-30,16,16,4,'#ff4d4d');ctx.fillStyle='#fff';ctx.font='bold 13px sans-serif';ctx.textAlign='center';ctx.fillText('!',n.x,n.y-17)}
+  else if(n.mode==='curious'&&!n.delay){ctx.fillStyle='#fff';ctx.font='bold 14px sans-serif';ctx.textAlign='center';ctx.fillText('?',n.x,n.y-19)}}
+ person(S.p.x,S.p.y,'#1fa6a0',S.p.dx,S.p.dy,S.p.mv,'#ffd23f');
+ const near=S.mode==='play'?nearest():null;$('bAct').classList.toggle('hot',!!(near&&active(near)));
+ if(near&&active(near)){rr(near.x-9,near.y-30,18,16,4,'#ffd23f');ctx.fillStyle='#1a1a1a';ctx.font='bold 12px sans-serif';ctx.textAlign='center';ctx.fillText('E',near.x,near.y-18)}
+ // escuridão
+ gr=ctx.createRadialGradient(S.p.x,S.p.y,40,S.p.x,S.p.y,250);gr.addColorStop(0,'rgba(2,5,12,0)');gr.addColorStop(1,'rgba(2,5,12,.8)');ctx.fillStyle=gr;ctx.fillRect(-4,-4,W+8,H+8);
+ const tg=(S.mode==='play'||S.mode==='dlg')?(S.n===3&&!S.iso?spots[3]:S.iso&&!S.called?spots[4]:null):null;
+ if(tg){const by=Math.sin(S.t*5)*3;ctx.fillStyle='#ff9d1a';ctx.beginPath();ctx.moveTo(tg.x,tg.y-14+by);ctx.lineTo(tg.x-8,tg.y-28+by);ctx.lineTo(tg.x+8,tg.y-28+by);ctx.fill();ctx.font='bold 11px sans-serif';ctx.textAlign='center';ctx.fillText(tg.id==='kit'?'KIT':'RÁDIO',tg.x,tg.y-32+by)}
+ const gd=guide();
+ if(gd!==null){const ax=S.p.x+Math.cos(gd)*30,ay=S.p.y-3+Math.sin(gd)*30;ctx.save();ctx.translate(ax,ay);ctx.rotate(gd);ctx.globalAlpha=.38+.12*Math.sin(S.t*3);ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.lineCap='round';ctx.lineJoin='round';ctx.beginPath();ctx.moveTo(-4,-5);ctx.lineTo(4,0);ctx.lineTo(-4,5);ctx.stroke();ctx.restore()}
+ // brilho acima da escuridão
+ ctx.globalCompositeOperation='lighter';gr=ctx.createRadialGradient(ZX,ZY,2,ZX,ZY,RZ+30);gr.addColorStop(0,`rgba(60,160,255,${.35+.15*pulse})`);gr.addColorStop(1,'rgba(60,160,255,0)');ctx.fillStyle=gr;ctx.fillRect(ZX-110,ZY-110,220,220);ctx.globalCompositeOperation='source-over';
+ for(const r of S.rings){ctx.strokeStyle=r.col;ctx.globalAlpha=Math.max(0,r.l);ctx.lineWidth=3;ctx.beginPath();ctx.arc(r.x,r.y,r.r,0,6.283);ctx.stroke()}
+ for(const p of S.parts){ctx.fillStyle=p.col;ctx.globalAlpha=Math.max(0,p.l);ctx.fillRect(p.x-1.5,p.y-1.5,3,3)}ctx.globalAlpha=1;
+ if(S.flash>0){ctx.fillStyle=`rgba(255,60,60,${S.flash*.25})`;ctx.fillRect(-4,-4,W+8,H+8)}
+}
+
+// ---------- laço, entrada ----------
+let last=performance.now();
+function loop(now){requestAnimationFrame(loop);const dt=Math.min(.05,(now-last)/1000);last=now;try{update(dt);draw()}catch(e){console.error(e)}}
+addEventListener('keydown',e=>{
+ if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space'].includes(e.code)&&S.mode!=='menu')e.preventDefault();
+ if(e.code==='Escape'){if(S.mode==='dlg')closeDlg();else pause();return}
+ if(e.code==='KeyE'&&!e.repeat){interact();return}
+ keys[e.code]=true});
+addEventListener('keyup',e=>{keys[e.code]=false});
+addEventListener('blur',()=>{for(const k in keys)keys[k]=false});
+document.addEventListener('visibilitychange',()=>{if(document.hidden&&S.mode==='play')pause()});
+const joy={x:0,y:0},jb=$('joy'),kn=$('knob'),cl=$('ctlL');let jid=null;
+function jmove(e){const r=jb.getBoundingClientRect(),R0=r.width/2;let dx=e.clientX-(r.left+R0),dy=e.clientY-(r.top+R0);const l=Math.hypot(dx,dy);if(l>R0){dx*=R0/l;dy*=R0/l}
+ kn.style.transform=`translate(${dx}px,${dy}px)`;const h=Math.min(1,Math.hypot(dx,dy)/R0);
+ if(h<.2){joy.x=joy.y=0}else{const k=(h-.2)/.8/h;joy.x=dx/R0*k;joy.y=dy/R0*k}}
+function jend(){jid=null;joy.x=joy.y=0;kn.style.transform='translate(0,0)'}
+cl.addEventListener('pointerdown',e=>{e.preventDefault();jid=e.pointerId;try{cl.setPointerCapture(jid)}catch(_){}jmove(e)});
+cl.addEventListener('pointermove',e=>{if(e.pointerId===jid){e.preventDefault();jmove(e)}});
+['pointerup','pointercancel','lostpointercapture'].forEach(ev=>cl.addEventListener(ev,e=>{if(e.pointerId===jid)jend()}));
+function applyTouch(){const t=matchMedia('(pointer:coarse)').matches||innerWidth<700;document.body.classList.toggle('touch',t);$('bDlg').textContent=t?'CONTINUAR':'CONTINUAR (E)'}
+function fit(){const m=$('main'),W0=m.clientWidth,H0=m.clientHeight,tc=document.body.classList.contains('touch'),land=matchMedia('(orientation:landscape)').matches;
+ let aw=W0,ah=H0;if(tc){if(land)aw=W0-256;else ah=H0-(innerHeight<700?140:176)}
+ aw=Math.max(160,aw);ah=Math.max(100,ah);
+ const z=tc?(land?.9:aw/420):Math.min(aw/W,ah/H);
+ const cw=Math.floor(Math.min(aw,W*z)),ch=Math.floor(Math.min(ah,H*z));
+ if(cw!==CW||ch!==CH||z!==VZ||!cv.width||cv.style.width!==cw+'px'){CW=cw;CH=ch;VZ=z;cv.style.width=cw+'px';cv.style.height=ch+'px';cv.width=Math.round(cw*Q);cv.height=Math.round(ch*Q)}}
+const relayout=()=>{applyTouch();fit()};
+addEventListener('resize',relayout);addEventListener('orientationchange',()=>setTimeout(relayout,200));
+if(window.ResizeObserver)new ResizeObserver(fit).observe($('main'));
+document.addEventListener('touchmove',e=>{if(e.target.closest&&e.target.closest('#stage,.ctl'))e.preventDefault()},{passive:false});
+document.addEventListener('gesturestart',e=>e.preventDefault());
+document.addEventListener('contextmenu',e=>{if(e.target.closest&&e.target.closest('.ctl,#stage'))e.preventDefault()});
+$('bAct').addEventListener('pointerdown',e=>{e.preventDefault();interact()});
+$('bStart').onclick=start;$('bResume').onclick=pause;$('bPause').onclick=pause;$('bDlg').onclick=dlgAct;$('dP').onclick=()=>{if(tyBusy())finishType()};
+$('bAgain').onclick=$('bRetry').onclick=()=>{init();start()};
+$('bReset').onclick=()=>{init()};
+applyTouch();init();fit();requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
